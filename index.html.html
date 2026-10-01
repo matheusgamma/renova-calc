@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rebalanceamento · Renova</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#F2F5F2;color:#111;min-height:100vh}
+.bar{background:#0B1E1C;padding:12px 24px;display:flex;align-items:center;gap:10px}
+.bar-brand{color:#2DD9C0;font-size:12px;font-weight:700}
+.bar-sep{width:1px;height:14px;background:#333}
+.bar-name{color:#fff;font-size:12px}
+.bar-line{height:3px;background:#1D9E75}
+.wrap{max-width:1060px;margin:0 auto;padding:24px 20px}
+h1{font-size:20px;font-weight:700;color:#0B1E1C;margin-bottom:4px}
+.sub{font-size:13px;color:#6B7280;margin-bottom:20px}
+.card{background:#fff;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:14px}
+.card-head{padding:12px 16px;border-bottom:1px solid #F0F0F0;font-size:12px;font-weight:700;color:#1A7A50;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:11px;color:#6B7280;font-weight:600}
+.fg input,.fg select{border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:13px;outline:none}
+.fg input:focus,.fg select:focus{border-color:#1D9E75}
+.how{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:#374151;line-height:2}
+.how b{color:#1A7A50}
+.key{background:#E5E7EB;border:1px solid #D1D5DB;border-radius:3px;padding:1px 6px;font-size:11px;font-weight:700;font-family:monospace}
+textarea{width:100%;height:160px;border:2px solid #1D9E75;border-radius:8px;padding:12px;font-size:13px;font-family:monospace;resize:vertical;outline:none;background:#fff}
+.btn-imp{display:block;width:100%;margin-top:10px;background:#0B1E1C;color:#2DD9C0;border:none;border-radius:7px;padding:11px;font-size:14px;font-weight:700;cursor:pointer}
+.btn-imp:hover{background:#162E2B}
+.btn-calc{display:block;width:100%;background:#0B1E1C;color:#2DD9C0;border:none;border-radius:7px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px}
+.btn-calc:hover{background:#162E2B}
+.btn-add{background:none;border:1.5px solid #1D9E75;color:#1A7A50;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-del{background:none;border:1px solid #FDEDEC;color:#C0392B;border-radius:4px;padding:3px 7px;font-size:11px;cursor:pointer}
+#msg{margin-top:8px;padding:9px 12px;border-radius:6px;display:none;font-size:13px}
+.ok{background:#E8F5EE;color:#1A7A50;border:1px solid #BBF7D0}
+.er{background:#FDEDEC;color:#C0392B;border:1px solid #FECACA}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 10px;font-size:11px;color:#9CA3AF;font-weight:600;border-bottom:1px solid #F0F0F0;background:#FAFAFA}
+td{padding:7px 10px;border-bottom:1px solid #F5F5F5;vertical-align:middle}
+input.sm{width:70px;border:1px solid #E5E7EB;border-radius:4px;padding:4px 7px;font-size:12px;outline:none}
+input.md{width:94px;border:1px solid #E5E7EB;border-radius:4px;padding:4px 7px;font-size:12px;outline:none}
+input.tk{width:78px;border:1px solid #1D9E75;border-radius:4px;padding:4px 7px;font-size:12px;font-weight:700;outline:none;background:#F0FDF4}
+input.vp{width:94px;border:1px solid #FDEDEC;border-radius:4px;padding:4px 7px;font-size:12px;outline:none;background:#FFF8F8}
+select.op{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid;appearance:none;min-width:100px}
+.ov {background:#FDEDEC;color:#C0392B;border-color:#C0392B}
+.ovp{background:#FFF0E0;color:#C05A00;border-color:#E07000}
+.om {background:#F5F5F5;color:#6B7280;border-color:#D1D5DB}
+.oa {background:#E8F5EE;color:#1A7A50;border-color:#1D9E75}
+.on2{background:#F3E8FF;color:#6B21A8;border-color:#6B21A8}
+.res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.rc{background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px 14px}
+.rcl{font-size:11px;color:#9CA3AF;margin-bottom:3px}
+.rcv{font-size:18px;font-weight:700}
+.cg{color:#1A7A50}.cr{color:#C0392B}.cn{color:#0B1E1C}.ca{color:#7F6000}
+.badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid}
+.bv {background:#FDEDEC;color:#C0392B;border-color:#C0392B}
+.bvp{background:#FFF0E0;color:#C05A00;border-color:#E07000}
+.bm {background:#F5F5F5;color:#6B7280;border-color:#D1D5DB}
+.ba {background:#E8F5EE;color:#1A7A50;border-color:#1D9E75}
+.bn {background:#F3E8FF;color:#6B21A8;border-color:#6B21A8}
+.res-table tr.rv  td{background:#FFF8F8}
+.res-table tr.rvp td{background:#FFF5EC}
+.res-table tr.rm  td{background:#FAFAFA}
+.res-table tr.ra  td{background:#F7FEFA}
+.res-table tr.rn  td{background:#FAF5FF}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="bar-brand">RENOVA INVEST</span>
+  <div class="bar-sep"></div>
+  <span class="bar-name">Mesa RV · Rebalanceamento</span>
+</div>
+<div class="bar-line"></div>
+<div class="wrap">
+  <h1>Calculadora de Rebalanceamento</h1>
+  <p class="sub">Cole os dados do BTG e calcule o rebalanceamento automaticamente.</p>
+
+  <div class="card">
+    <div class="card-head">Cliente</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="fg"><label>Nome</label><input id="nome" placeholder="Ex: Priscila" style="width:200px"></div>
+        <div class="fg"><label>Data</label><input id="data" style="width:130px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">1 · Cole os dados do BTG</div>
+    <div class="card-body">
+      <div class="how">
+        <b>Como copiar do BTG:</b> Abra a carteira → selecione as linhas →
+        <span class="key">Ctrl</span>+<span class="key">C</span> →
+        clique na caixa → <span class="key">Ctrl</span>+<span class="key">V</span> → clique em <b>Importar</b>
+      </div>
+      <textarea id="box" placeholder="Cole aqui os dados copiados do BTG..."></textarea>
+      <button class="btn-imp" onclick="doImport()">Importar dados →</button>
+      <div id="msg"></div>
+    </div>
+  </div>
+
+  <div id="sec-ops" style="display:none">
+    <div class="card">
+      <div class="card-head">
+        2 · Defina as operações
+        <button class="btn-add" onclick="addRow()">+ Ativo novo</button>
+      </div>
+      <div>
+        <table>
+          <thead><tr>
+            <th>Ticker</th><th>Qtd</th><th>PM (R$)</th>
+            <th>Preço atual (R$)</th><th>Resultado</th><th>Saldo</th>
+            <th>Operação</th><th>Venda parcial (R$)</th><th></th>
+          </tr></thead>
+          <tbody id="ops-tb"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">3 · Configuração</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="fg"><label>Aporte (R$)</label>
+            <input type="number" id="aporte" value="0" min="0" step="1000" style="width:150px">
+          </div>
+          <div class="fg"><label>Distribuição</label>
+            <select id="distrib" style="width:280px;padding:7px 10px;font-size:13px">
+              <option value="equal">Igual entre APORTAR + NOVO</option>
+              <option value="total">Equalizar toda a carteira</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcular()">⟳  Calcular rebalanceamento</button>
+  </div>
+
+  <div id="sec-res" style="display:none">
+    <div style="background:#0B1E1C;padding:13px 16px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center">
+      <span style="color:#2DD9C0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Resultado</span>
+      <span id="res-cli" style="color:#8FA3C0;font-size:12px"></span>
+    </div>
+    <div style="background:#fff;padding:14px;border:1px solid #E5E7EB;border-top:none">
+      <div class="res-grid" id="res-cards"></div>
+    </div>
+    <div class="card" style="margin-top:0;border-top:none;border-radius:0 0 10px 10px">
+      <table class="res-table">
+        <thead><tr>
+          <th>Ativo</th><th>Operação</th><th>Ação</th><th>Qtd total</th>
+          <th>PM antes</th><th>Novo PM</th><th>Saldo novo</th><th>% cart.</th>
+        </tr></thead>
+        <tbody id="res-tb"></tbody>
+      </table>
+    </div>
+  </div>
+  <button id="btn-pdf" onclick="gerarPDF()" style="display:block;width:100%;background:#1A7A50;color:#fff;border:none;border-radius:7px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:24px">↓ Gerar PDF</button>
+</div>
+</div>
+
+<!-- MODAL PDF -->
+<div id="pdf-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;flex-direction:column;align-items:center;justify-content:center">
+  <div style="width:95%;max-width:1100px;background:#0B1E1C;border-radius:10px 10px 0 0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <span style="color:#2DD9C0;font-size:13px;font-weight:700">PDF gerado — <span id="pdf-pgcount" style="color:#8FA3C0;font-weight:400">2 páginas · role para ver tudo</span></span>
+    <button id="btn-dl" onclick="baixarPDF()" style="background:#1A7A50;color:#fff;border:none;border-radius:6px;padding:6px 18px;font-weight:700;cursor:pointer;font-size:13px">↓ Baixar PDF</button>
+    <button onclick="fecharPDF()" style="background:#C0392B;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-weight:700;cursor:pointer;font-size:13px">✕ Fechar</button>
+  </div>
+  <div id="pdf-pages" style="width:95%;max-width:1100px;height:82vh;overflow-y:auto;background:#555;padding:16px;display:flex;flex-direction:column;gap:12px;align-items:center"></div>
+</div>
+
+<script>
+var rows = [], nid = 1;
+document.getElementById('data').value = new Date().toLocaleDateString('pt-BR');
+
+function brnum(s) {
+  s = s.replace(/R\$/g,'').replace(/\s/g,'').trim();
+  if (/^\d{1,3}(\.\d{3})+,\d+$/.test(s)) return parseFloat(s.replace(/\./g,'').replace(',','.'));
+  if (/^\d{1,3}(\.\d{3})+$/.test(s)) return parseFloat(s.replace(/\./g,''));
+  if (s.indexOf(',') >= 0) return parseFloat(s.replace(',','.'));
+  var n = parseFloat(s); return isNaN(n) ? null : n;
+}
+function isCompanyName(line) {
+  if (line.indexOf('R$') >= 0) return false;
+  if (/,\d{2}/.test(line)) return false;
+  if (/\d+%/.test(line)) return false;
+  var alpha = (line.match(/[a-zA-Z]/g)||[]).length;
+  return alpha / Math.max(line.length,1) > 0.4;
+}
+function parseText(text) {
+  var raw = text.split('\n').map(function(l){return l.trim();}).filter(function(l){return l && l!=='-';});
+  var tickerRe = /^[A-Z]{3,5}[0-9]{1,2}$/;
+  var out = []; var i = 0;
+  while (i < raw.length) {
+    if (tickerRe.test(raw[i])) {
+      var ticker = raw[i]; i++;
+      if (i < raw.length && isCompanyName(raw[i])) i++;
+      var block = [];
+      while (i < raw.length && !tickerRe.test((raw[i].split(/\s/)[0]||''))) { block.push(raw[i]); i++; }
+      var bt = block.join(' ');
+      var pctM = bt.match(/(-?\d[\d,]+)%/);
+      var pct = pctM ? parseFloat(pctM[1].replace(',','.')) : null;
+      var clean = bt.replace(/-?\d[\d,]+%/g,'');
+      var tokens = clean.match(/R?\$?-?\d[\d.,]*/g)||[];
+      var nums = tokens.map(function(t){return brnum(t);}).filter(function(n){return n!==null;});
+      var qty = null;
+      for (var j=0;j<nums.length;j++){if(nums[j]===Math.floor(nums[j])&&nums[j]>0&&nums[j]<100000){qty=nums[j];break;}}
+      var prices = nums.filter(function(n){return n!==qty&&n>0.05;});
+      var pm = prices[0]||null;
+      var px = prices.length>=4?prices[2]:prices.length>=2?prices[1]:pm;
+      out.push({ticker:ticker,qt:qty?Math.round(qty):null,pm:pm,px:px,res:pct});
+    } else { i++; }
+  }
+  return out;
+}
+function doImport() {
+  var raw = document.getElementById('box').value;
+  if (!raw.trim()) { showMsg('Cole os dados primeiro.',false); return; }
+  var parsed = parseText(raw);
+  if (!parsed.length) { showMsg('Não identifiquei ativos. Verifique os dados.',false); return; }
+  rows = parsed.map(function(d){
+    return {id:nid++,ticker:(d.ticker||'').toUpperCase(),qt:d.qt||0,pm:d.pm||0,px:d.px||0,
+      res:d.res||(d.pm&&d.px?(d.px-d.pm)/d.pm*100:0),op:'aportar',vparcial:0};
+  });
+  renderOps();
+  document.getElementById('sec-ops').style.display='block';
+  showMsg('✓ '+parsed.length+' ativos importados.',true);
+  setTimeout(function(){document.getElementById('sec-ops').scrollIntoView({behavior:'smooth',block:'start'});},100);
+}
+function showMsg(txt,ok){var el=document.getElementById('msg');el.textContent=txt;el.className=ok?'ok':'er';el.style.display='block';}
+
+var OP_CLS={vender:'ov',parcial:'ovp',manter:'om',aportar:'oa',novo:'on2'};
+function renderOps(){
+  document.getElementById('ops-tb').innerHTML=rows.map(function(r){
+    var s=(r.qt||0)*(r.px||0),res=r.pm&&r.px?((r.px-r.pm)/r.pm*100):0;
+    var isNovo=r.op==='novo',isParcial=r.op==='parcial';
+    var tickerCell=isNovo?'<input class="tk" id="tk_'+r.id+'" value="'+r.ticker+'" oninput="up('+r.id+',\'ticker\',this.value.toUpperCase());this.value=this.value.toUpperCase()" placeholder="TICK3">':'<strong style="color:#0B1E1C">'+r.ticker+'</strong>';
+    var pmCell=isNovo?'<span style="color:#9CA3AF;font-size:11px;font-style:italic">preço de compra</span>':'<input class="md" type="number" value="'+(r.pm||'')+'" oninput="up('+r.id+',\'pm\',+this.value)" step=".01" placeholder="—">';
+    var vpCell=isParcial?'<input class="vp" type="number" value="'+(r.vparcial||'')+'" oninput="up('+r.id+',\'vparcial\',+this.value)" placeholder="R$ a vender">':'<span style="color:#D1D5DB">—</span>';
+    var opCls=OP_CLS[r.op]||'oa';
+    var qtdCell = isNovo
+      ? '<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:#1A7A50;font-weight:600">R$ valor</span><input class="md" id="val_'+r.id+'" type="number" value="'+(r.valor||'')+'" oninput="up('+r.id+',\'valor\',+this.value);calcQtNovoRow('+r.id+')" placeholder="Ex: 5000" style="border-color:#1D9E75;background:#F0FDF4"></div>'
+      : '<input class="sm" type="number" value="'+(r.qt||'')+'" oninput="up('+r.id+',\'qt\',+this.value)" placeholder="0">';
+    var pxNovoCell = '<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:#6B7280;font-weight:600">Preço atual</span><input class="md" id="px_'+r.id+'" type="number" value="'+(r.px||'')+'" oninput="up('+r.id+',\'px\',+this.value);calcQtNovoRow('+r.id+')" step=".01" placeholder="Auto" style="border-color:#1D9E75;background:#F0FDF4"><span id="qtnovo_'+r.id+'" style="font-size:11px;color:#1A7A50;display:'+(r.qt&&r.px?'inline':'none')+'">'+(r.qt&&r.px?r.qt+' ações':'')+'</span></div>';
+    var pxCell = isNovo ? pxNovoCell : '<input class="md" type="number" value="'+(r.px||'')+'" oninput="up('+r.id+',\'px\',+this.value)" step=".01" placeholder="—">';
+    return '<tr><td>'+tickerCell+'</td><td>'+qtdCell+'</td><td>'+pmCell+'</td><td>'+pxCell+'</td><td style="color:'+(res>=0?'#1A7A50':'#C0392B')+';font-weight:600">'+(r.px&&r.pm?res.toFixed(2)+'%':'—')+'</td><td style="font-weight:600">'+(s?'R$ '+fmt(s):'—')+'</td><td><select class="op '+opCls+'" onchange="up('+r.id+',\'op\',this.value);renderOps()"><option value="vender"'+(r.op==='vender'?' selected':'')+'>VENDER TUDO</option><option value="parcial"'+(r.op==='parcial'?' selected':'')+'>VENDA PARCIAL</option><option value="manter"'+(r.op==='manter'?' selected':'')+'>MANTER</option><option value="aportar"'+(r.op==='aportar'?' selected':'')+'>APORTAR</option><option value="novo"'+(r.op==='novo'?' selected':'')+'>NOVO</option></select></td><td>'+vpCell+'</td><td><button class="btn-del" onclick="del('+r.id+')">✕</button></td></tr>';
+  }).join('');
+}
+function addRow(){var id=nid++;rows.push({id:id,ticker:'',qt:0,pm:0,px:0,res:0,op:'novo',vparcial:0,valor:0,buscando:false});renderOps();setTimeout(function(){var el=document.getElementById('tk_'+id);if(el)el.focus();},40);}
+function up(id,f,v){var r=rows.find(function(r){return r.id===id;});if(r)r[f]=v;}
+function del(id){rows=rows.filter(function(r){return r.id!==id;});renderOps();}
+
+function calcular(){
+  document.querySelectorAll('#ops-tb select').forEach(function(s,i){if(rows[i])rows[i].op=s.value;});
+  var aporte=parseFloat(document.getElementById('aporte').value)||0;
+  var nome=document.getElementById('nome').value||'Cliente';
+  var data=document.getElementById('data').value;
+  var totalAtual=rows.reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
+  var vendas=rows.filter(function(r){return r.op==='vender';}).reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
+  var vendasP=rows.filter(function(r){return r.op==='parcial';}).reduce(function(s,r){return s+(r.vparcial||0);},0);
+  var totalFinal=totalAtual+aporte-vendasP;
+  var nPos=rows.filter(function(r){return r.op!=='vender';}).length;
+  var alvo=nPos>0?totalFinal/nPos:0;
+  var res=rows.map(function(r){
+    var sa=(r.qt||0)*(r.px||0),qtN=0,sN=sa,pmN=r.pm;
+    if(r.op==='vender'){sN=0;qtN=-(r.qt||0);}
+    else if(r.op==='parcial'&&r.px){var vq=Math.min(Math.floor((r.vparcial||0)/r.px),(r.qt||0));qtN=-vq;sN=(r.qt-vq)*r.px;pmN=r.pm;}
+    else if(r.op!=='manter'&&r.px){var c=Math.max(0,alvo-sa);qtN=Math.floor(c/r.px);var q2=(r.qt||0)+qtN;pmN=q2>0?((r.qt||0)*(r.pm||0)+qtN*r.px)/q2:r.px;sN=q2*r.px;}
+    return Object.assign({},r,{sa:sa,sN:sN,qtN:qtN,pmN:pmN});
+  });
+  var totN=res.filter(function(p){return p.op!=='vender';}).reduce(function(s,p){return s+p.sN;},0);
+  document.getElementById('res-cards').innerHTML=[['Total vendido',vendas+vendasP,'cr'],['Aporte',aporte,'cg'],['Portfolio final',totN,'cn'],['Alvo / posição',alvo,'ca']].map(function(a){return '<div class="rc"><div class="rcl">'+a[0]+'</div><div class="rcv '+a[2]+'">R$ '+fmt(a[1])+'</div></div>';}).join('');
+  document.getElementById('res-cli').textContent=nome+' · '+data;
+  var OPS={vender:'VENDER',parcial:'PARCIAL',manter:'MANTER',aportar:'APORTAR',novo:'NOVO'};
+  var BC={vender:'bv',parcial:'bvp',manter:'bm',aportar:'ba',novo:'bn'};
+  var RC={vender:'rv',parcial:'rvp',manter:'rm',aportar:'ra',novo:'rn'};
+  document.getElementById('res-tb').innerHTML=res.map(function(p){
+    var pct=totN>0?p.sN/totN*100:0,q2=p.op==='vender'?0:(p.qt||0)+(p.qtN||0);
+    var acao;
+    if(p.op==='vender')acao='<span style="color:#C0392B;font-weight:700">Vender '+p.qt+' ações</span>';
+    else if(p.op==='parcial')acao='<span style="color:#C05A00;font-weight:700">Vender '+Math.abs(p.qtN)+' ações (R$ '+fmt(p.vparcial||0)+')</span>';
+    else if(p.op==='manter')acao='<span style="color:#9CA3AF">Manter</span>';
+    else if(p.qtN>0)acao='<span style="color:#1A7A50;font-weight:700">+ '+p.qtN+' ações</span>';
+    else acao='—';
+    var sStr=p.op==='vender'?'<span style="color:#C0392B">—</span>':'<span style="font-weight:700;color:'+(p.op==='novo'?'#6B21A8':p.op==='parcial'?'#C05A00':'#1A7A50')+'">R$ '+fmt(p.sN)+'</span>';
+    return '<tr class="'+RC[p.op]+'"><td><strong>'+p.ticker+'</strong></td><td><span class="badge '+BC[p.op]+'">'+OPS[p.op]+'</span></td><td>'+acao+'</td><td style="font-weight:600">'+(q2||'—')+'</td><td style="color:#9CA3AF">'+(p.pm?'R$ '+p.pm.toFixed(2):'—')+'</td><td style="font-weight:700">'+(p.op!=='vender'&&p.pmN?'R$ '+p.pmN.toFixed(2):'—')+'</td><td>'+sStr+'</td><td style="color:#9CA3AF">'+(p.op!=='vender'&&pct>0?pct.toFixed(1)+'%':'—')+'</td></tr>';
+  }).join('');
+  document.getElementById('sec-res').style.display='block';
+  setTimeout(function(){document.getElementById('sec-res').scrollIntoView({behavior:'smooth',block:'start'});},100);
+}
+function gerarPDF() {
+  var btn = document.getElementById('btn-pdf');
+  btn.textContent = '⏳ Gerando...'; btn.disabled = true;
+  setTimeout(function() {
+    try {
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+      var nome = document.getElementById('nome').value||'Cliente';
+      var data = document.getElementById('data').value;
+      var W=297,MG=14;
+      doc.setFillColor(11,30,28);doc.rect(0,0,W,14,'F');
+      doc.setTextColor(45,217,192);doc.setFontSize(9);doc.setFont('helvetica','bold');
+      doc.text('RENOVA INVEST  ·  Mesa RV',MG,9);
+      doc.setTextColor(255,255,255);doc.setFont('helvetica','normal');
+      doc.text(data,W-MG,9,{align:'right'});
+      doc.setFillColor(29,158,117);doc.rect(0,14,W,2,'F');
+      doc.setTextColor(17,17,17);doc.setFont('helvetica','bold');doc.setFontSize(20);
+      // ── PÁGINA 1: CARTEIRA ATUAL ──────────────────────────────
+      doc.setFillColor(11,30,28);doc.rect(0,0,W,14,'F');
+      doc.setTextColor(45,217,192);doc.setFontSize(9);doc.setFont('helvetica','bold');
+      doc.text('RENOVA INVEST  ·  Mesa RV',MG,9);
+      doc.setTextColor(255,255,255);doc.setFont('helvetica','normal');
+      doc.text(data,W-MG,9,{align:'right'});
+      doc.setFillColor(29,158,117);doc.rect(0,14,W,2,'F');
+      doc.setTextColor(17,17,17);doc.setFont('helvetica','bold');doc.setFontSize(20);
+      doc.text('Carteira Atual',MG,28);
+      doc.setFont('helvetica','normal');doc.setFontSize(11);doc.setTextColor(107,114,128);
+      doc.text(nome,MG,36);
+      doc.setDrawColor(209,213,219);doc.line(MG,40,W-MG,40);
+      var totalCart=rows.reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
+      doc.setFontSize(10);doc.setTextColor(107,114,128);
+      doc.text('Patrimônio total: R$ '+totalCart.toLocaleString('pt-BR',{minimumFractionDigits:2}),MG,48);
+      var hdrs1=['Ativo','Qtd','Preço médio','Preço atual','Resultado','Saldo','Recomendação'];
+      var cw1=[22,18,28,28,22,32,30];
+      var ty1=56;
+      doc.setFillColor(249,250,251);doc.rect(MG,ty1,W-MG*2,9,'F');
+      var tx1=MG;
+      doc.setFontSize(8);doc.setTextColor(107,114,128);doc.setFont('helvetica','bold');
+      hdrs1.forEach(function(h,i){doc.text(h,tx1,ty1+6);tx1+=cw1[i];});
+      ty1+=9;doc.setDrawColor(209,213,219);doc.line(MG,ty1,W-MG,ty1);
+      var opColors1={vender:[192,57,43],parcial:[192,90,0],manter:[107,114,128],aportar:[26,122,80],novo:[107,33,168]};
+      rows.forEach(function(r,ri){
+        if(r.op==='novo') return;
+        var s=(r.qt||0)*(r.px||0);
+        var res=r.pm&&r.px?((r.px-r.pm)/r.pm*100):0;
+        if(ri%2===0){doc.setFillColor(249,249,249);doc.rect(MG,ty1,W-MG*2,9,'F');}
+        tx1=MG;
+        [{t:r.ticker,c:[17,17,17],b:true},{t:String(r.qt||0),c:[17,17,17],b:false},
+         {t:r.pm?'R$ '+r.pm.toFixed(2):'—',c:[17,17,17],b:false},
+         {t:r.px?'R$ '+r.px.toFixed(2):'—',c:[17,17,17],b:false},
+         {t:r.px&&r.pm?(res>=0?'+':'')+res.toFixed(2)+'%':'—',c:res>=0?[26,122,80]:[192,57,43],b:true},
+         {t:s?'R$ '+s.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—',c:[17,17,17],b:false},
+         {t:{vender:'VENDER',parcial:'PARCIAL',manter:'MANTER',aportar:'APORTAR',novo:'NOVO'}[r.op]||r.op,c:opColors1[r.op]||[17,17,17],b:true}
+        ].forEach(function(cell,ci){
+          doc.setTextColor(cell.c[0],cell.c[1],cell.c[2]);
+          doc.setFont('helvetica',cell.b?'bold':'normal');
+          doc.setFontSize(8);
+          doc.text(String(cell.t).substring(0,18),tx1,ty1+6);
+          tx1+=cw1[ci];
+        });
+        ty1+=9;doc.setDrawColor(240,240,240);doc.line(MG,ty1,W-MG,ty1);
+      });
+      doc.setFillColor(29,158,117);doc.rect(0,201,W,4,'F');
+      doc.setTextColor(156,163,175);doc.setFontSize(7);doc.setFont('helvetica','normal');
+      doc.text('Renova Invest  ·  Mesa RV  ·  Material interno',MG,207);
+
+      // ── PÁGINA 2: REBALANCEAMENTO ──────────────────────────────
+      doc.addPage();
+
+      doc.text('Rebalanceamento de Carteira',MG,28);
+      doc.setFont('helvetica','normal');doc.setFontSize(11);doc.setTextColor(107,114,128);
+      doc.text(nome,MG,36);
+      doc.setDrawColor(209,213,219);doc.line(MG,40,W-MG,40);
+      var cDefs={cr:[253,237,236,192,57,43],cg:[232,245,238,26,122,80],cn:[245,245,245,17,17,17],ca:[255,249,230,127,96,0]};
+      var cx=MG;
+      document.querySelectorAll('#res-cards .rc').forEach(function(c){
+        var lbl=c.querySelector('.rcl').textContent||'';
+        var val=c.querySelector('.rcv').textContent||'';
+        var cl=['cr','cg','cn','ca'].find(function(x){return c.querySelector('.rcv').classList.contains(x);})||'cn';
+        var cd=cDefs[cl];
+        doc.setFillColor(cd[0],cd[1],cd[2]);doc.rect(cx,43,64,21,'F');
+        doc.setDrawColor(cd[3],cd[4],cd[5]);doc.rect(cx,43,64,21,'D');
+        doc.setTextColor(107,114,128);doc.setFontSize(7);doc.setFont('helvetica','normal');
+        doc.text(lbl,cx+4,51);
+        doc.setTextColor(cd[3],cd[4],cd[5]);doc.setFontSize(12);doc.setFont('helvetica','bold');
+        doc.text(val,cx+4,60);cx+=67;
+      });
+      var ty=73;
+      doc.setFillColor(249,250,251);doc.rect(MG,ty,W-MG*2,9,'F');
+      var hdrs=['Ativo','Operação','Ação','Qtd total','PM antes','Novo PM','Saldo novo','% cart.'];
+      var cw=[22,26,48,20,22,22,28,12];
+      var tx=MG;
+      doc.setFontSize(8);doc.setTextColor(107,114,128);doc.setFont('helvetica','bold');
+      hdrs.forEach(function(h,i){doc.text(h,tx,ty+6);tx+=cw[i];});
+      ty+=9;doc.setDrawColor(209,213,219);doc.line(MG,ty,W-MG,ty);
+      var rcC={rv:[255,248,248],rvp:[255,245,236],rm:[250,250,250],ra:[247,254,250],rn:[250,245,255]};
+      var txC={rv:[192,57,43],rvp:[192,90,0],rm:[107,114,128],ra:[26,122,80],rn:[107,33,168]};
+      document.querySelectorAll('#res-tb tr').forEach(function(tr,ri){
+        var cells=tr.querySelectorAll('td');if(!cells.length)return;
+        var cls=['rv','rvp','rm','ra','rn'].find(function(x){return tr.classList.contains(x);})||'rm';
+        var bg=rcC[cls],fg=txC[cls];
+        doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(MG,ty,W-MG*2,9,'F');
+        tx=MG;
+        cells.forEach(function(td,ci){
+          var txt=(td.textContent||'').trim().replace(/\s+/g,' ').substring(0,30);
+          var color=ci>=2?fg:[17,17,17];
+          doc.setTextColor(color[0],color[1],color[2]);
+          doc.setFont('helvetica',ci===0||ci===2?'bold':'normal');
+          doc.setFontSize(8);doc.text(txt,tx,ty+6);tx+=cw[ci];
+        });
+        ty+=9;doc.setDrawColor(240,240,240);doc.line(MG,ty,W-MG,ty);
+        if(ty>195){doc.addPage();ty=20;}
+      });
+      doc.setFillColor(29,158,117);doc.rect(0,201,W,4,'F');
+      doc.setTextColor(156,163,175);doc.setFontSize(7);doc.setFont('helvetica','normal');
+      doc.text('Renova Invest  ·  Mesa RV  ·  Material interno',MG,207);
+
+      // Store for download
+      window._pdfDoc = doc;
+      window._pdfNome = nome;
+
+      // Render pages with PDF.js
+      var pdfData = doc.output('arraybuffer');
+      var container = document.getElementById('pdf-pages');
+      container.innerHTML = '<p style="color:#fff;text-align:center;padding:20px">Renderizando...</p>';
+      container.scrollTop = 0;
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      pdfjsLib.getDocument({data: pdfData}).promise.then(function(pdf) {
+        container.innerHTML = '';
+        var pages = [];
+        for (var p=1; p<=pdf.numPages; p++) pages.push(p);
+        return pages.reduce(function(chain, pageNum) {
+          return chain.then(function() {
+            return pdf.getPage(pageNum).then(function(page) {
+              var vp = page.getViewport({scale: 2.0});
+              var canvas = document.createElement('canvas');
+              canvas.width = vp.width; canvas.height = vp.height;
+              canvas.style.cssText = 'width:100%;max-width:1050px;box-shadow:0 4px 20px rgba(0,0,0,.5);border-radius:4px;display:block';
+              container.appendChild(canvas);
+              // add page label
+              var label = document.createElement('div');
+              label.style.cssText = 'color:#aaa;font-size:11px;text-align:center;padding:4px 0;font-family:sans-serif';
+              label.textContent = 'Página '+pageNum+' de '+pdf.numPages;
+              container.insertBefore(label, canvas);
+              return page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+            });
+          });
+        }, Promise.resolve());
+      }).then(function(){
+        cont.scrollTop = 0;
+      }).catch(function(e){ container.innerHTML = '<p style="color:#f88">Erro: '+e.message+'</p>'; });
+
+      var modal = document.getElementById('pdf-modal');
+      modal.style.display = 'flex';
+      var cont = document.getElementById('pdf-pages');
+    } catch(e) { alert('Erro: '+e.message); }
+    finally { btn.textContent='↓ Gerar PDF'; btn.disabled=false; }
+  }, 50);
+}
+function fecharPDF() {
+  document.getElementById('pdf-modal').style.display='none';
+  document.getElementById('pdf-pages').innerHTML='';
+}
+function baixarPDF() {
+  if (window._pdfDoc) {
+    window._pdfDoc.save('Rebalanceamento_'+(window._pdfNome||'Cliente').replace(/\s+/g,'_')+'.pdf');
+  }
+}
+function calcQtNovoRow(id) {
+  var r = rows.find(function(r){return r.id===id;});
+  if (r && r.px && r.valor) {
+    r.qt = Math.floor(r.valor / r.px);
+    var qtEl = document.getElementById('qtnovo_'+id);
+    if (qtEl) { qtEl.textContent = r.qt+' ações'; qtEl.style.display='inline'; }
+  }
+}
+
+async function buscarPreco(id) {
+  var r = rows.find(function(r){return r.id===id;});
+  if (!r || !r.ticker || r.ticker.length < 4 || r.op !== 'novo') return;
+  if (r.px) return;
+
+  var pxEl = document.getElementById('pxnovo_'+id);
+  if (pxEl) { pxEl.textContent = 'buscando...'; pxEl.style.color='#9CA3AF'; }
+
+  try {
+    var sample = await window.claude?.use('sample');
+    if (!sample) { if(pxEl) pxEl.textContent='—'; return; }
+
+    var result = await sample(
+      'Preço atual da ação '+r.ticker+' na B3 hoje. Responda SOMENTE com o número, sem R$, sem texto. Ex: 42.51',
+      {modelTier:'quick'}
+    );
+
+    var preco = parseFloat((result.text||'').trim().replace(',','.').replace(/[^0-9.]/g,''));
+    if (!isNaN(preco) && preco > 0.01 && preco < 100000) {
+      r.px = preco;
+      if (pxEl) { pxEl.textContent='R$ '+preco.toFixed(2); pxEl.style.color='#0B1E1C'; pxEl.style.fontWeight='700'; }
+      // Recalcula qtd se já tiver valor digitado
+      var valEl = document.getElementById('val_'+id);
+      if (valEl && parseFloat(valEl.value) > 0) {
+        r.valor = parseFloat(valEl.value);
+        r.qt = Math.floor(r.valor / preco);
+        valEl.style.borderColor = '#1D9E75';
+        // Mostra qtd calculada ao lado
+        var qtEl = document.getElementById('qtnovo_'+id);
+        if (qtEl) { qtEl.textContent = r.qt+' ações'; qtEl.style.display='inline'; }
+      }
+    } else {
+      if (pxEl) { pxEl.textContent='não encontrado'; pxEl.style.color='#C0392B'; }
+    }
+  } catch(e) {
+    if (pxEl) { pxEl.textContent='erro'; pxEl.style.color='#C0392B'; }
+  }
+}
+
+function fmt(n){return(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+</script>
+</body>
+</html>
