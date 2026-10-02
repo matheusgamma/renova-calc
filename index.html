@@ -51,7 +51,7 @@ select.op{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;cur
 .om {background:#F5F5F5;color:#6B7280;border-color:#D1D5DB}
 .oa {background:#E8F5EE;color:#1A7A50;border-color:#1D9E75}
 .on2{background:#F3E8FF;color:#6B21A8;border-color:#6B21A8}
-.res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.res-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
 .rc{background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:12px 14px}
 .rcl{font-size:11px;color:#9CA3AF;margin-bottom:3px}
 .rcv{font-size:18px;font-weight:700}
@@ -67,6 +67,14 @@ select.op{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;cur
 .res-table tr.rm  td{background:#FAFAFA}
 .res-table tr.ra  td{background:#F7FEFA}
 .res-table tr.rn  td{background:#FAF5FF}
+@media(max-width:760px){.res-grid{grid-template-columns:repeat(2,1fr)}}
+.bk-btn{border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.bk-table td{font-family:monospace;font-size:12px}
+.bk-table tr.bkv td{background:#FFF8F8}
+.bk-table tr.bkc td{background:#F7FEFA}
+.dir{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid;font-family:-apple-system,sans-serif}
+.dir-v{background:#FDEDEC;color:#C0392B;border-color:#C0392B}
+.dir-c{background:#E8F5EE;color:#1A7A50;border-color:#1D9E75}
 </style>
 </head>
 <body>
@@ -85,6 +93,7 @@ select.op{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;cur
     <div class="card-body">
       <div class="row">
         <div class="fg"><label>Nome</label><input id="nome" placeholder="Ex: Priscila" style="width:200px"></div>
+        <div class="fg"><label>Conta BTG *</label><input id="conta" placeholder="Ex: 337591" inputmode="numeric" style="width:140px;border-color:#1D9E75;background:#F0FDF4;font-weight:700"></div>
         <div class="fg"><label>Data</label><input id="data" style="width:130px"></div>
       </div>
     </div>
@@ -158,7 +167,32 @@ select.op{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;cur
       </table>
     </div>
   </div>
-  <button id="btn-pdf" onclick="gerarPDF()" style="display:block;width:100%;background:#1A7A50;color:#fff;border:none;border-radius:7px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:24px">↓ Gerar PDF</button>
+  <div style="display:flex;gap:10px;margin-bottom:14px">
+    <button id="btn-pdf" onclick="gerarPDF()" style="flex:1;background:#1A7A50;color:#fff;border:none;border-radius:7px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">↓ Gerar PDF</button>
+    <button id="btn-basket" onclick="gerarBasket()" style="flex:1;background:#0B1E1C;color:#2DD9C0;border:none;border-radius:7px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">⇄ Gerar Basket</button>
+  </div>
+
+  <div id="sec-basket" style="display:none;margin-bottom:24px">
+    <div style="background:#0B1E1C;padding:13px 16px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="color:#2DD9C0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Basket de Push <span id="bk-info" style="color:#8FA3C0;font-weight:400;text-transform:none;letter-spacing:0"></span></span>
+      <div style="display:flex;gap:8px">
+        <button onclick="copiarBasket(true)" class="bk-btn" style="background:#2DD9C0;color:#0B1E1C">⧉ Copiar com cabeçalho</button>
+        <button onclick="copiarBasket(false)" class="bk-btn" style="background:transparent;color:#2DD9C0;border:1.5px solid #2DD9C0">⧉ Só as linhas</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:0;border-top:none;border-radius:0 0 10px 10px;overflow-x:auto">
+      <table class="bk-table">
+        <thead><tr><th>Conta</th><th>Ativo</th><th>Direção</th><th>Qtd</th><th>Tipo preço</th><th>Mercado</th><th>Financeiro est.</th></tr></thead>
+        <tbody id="bk-tb"></tbody>
+      </table>
+      <div id="bk-tot" style="display:flex;gap:18px;padding:10px 14px;font-size:12px;border-top:1px solid #F0F0F0;flex-wrap:wrap"></div>
+    </div>
+    <div id="bk-msg" style="margin-top:8px;padding:9px 12px;border-radius:6px;display:none;font-size:13px"></div>
+    <details style="margin-top:8px;font-size:12px;color:#6B7280">
+      <summary style="cursor:pointer">Ver texto bruto (separado por tab)</summary>
+      <textarea id="bk-raw" readonly style="height:140px;margin-top:6px;font-size:11px;border-color:#D1D5DB"></textarea>
+    </details>
+  </div>
 </div>
 </div>
 
@@ -258,21 +292,27 @@ function calcular(){
   var aporte=parseFloat(document.getElementById('aporte').value)||0;
   var nome=document.getElementById('nome').value||'Cliente';
   var data=document.getElementById('data').value;
-  var totalAtual=rows.reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
+  var totalAtual=rows.filter(function(r){return r.op!=='novo';}).reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
   var vendas=rows.filter(function(r){return r.op==='vender';}).reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
   var vendasP=rows.filter(function(r){return r.op==='parcial';}).reduce(function(s,r){return s+(r.vparcial||0);},0);
   var totalFinal=totalAtual+aporte-vendasP;
-  var nPos=rows.filter(function(r){return r.op!=='vender';}).length;
-  var alvo=nPos>0?totalFinal/nPos:0;
+  // NOVO compra só o financeiro informado; o restante é equalizado entre as demais posições
+  rows.forEach(function(r){if(r.op==='novo'&&r.px&&r.valor)r.qt=Math.floor(r.valor/r.px);});
+  var novoFin=rows.filter(function(r){return r.op==='novo';}).reduce(function(s,r){return s+(r.px?Math.floor((r.valor||0)/r.px)*r.px:0);},0);
+  var nPos=rows.filter(function(r){return r.op!=='vender'&&r.op!=='novo';}).length;
+  var alvo=nPos>0?(totalFinal-novoFin)/nPos:0;
   var res=rows.map(function(r){
     var sa=(r.qt||0)*(r.px||0),qtN=0,sN=sa,pmN=r.pm;
     if(r.op==='vender'){sN=0;qtN=-(r.qt||0);}
     else if(r.op==='parcial'&&r.px){var vq=Math.min(Math.floor((r.vparcial||0)/r.px),(r.qt||0));qtN=-vq;sN=(r.qt-vq)*r.px;pmN=r.pm;}
+    else if(r.op==='novo'){qtN=r.px?Math.floor((r.valor||0)/r.px):0;pmN=r.px;sN=qtN*(r.px||0);sa=0;}
     else if(r.op!=='manter'&&r.px){var c=Math.max(0,alvo-sa);qtN=Math.floor(c/r.px);var q2=(r.qt||0)+qtN;pmN=q2>0?((r.qt||0)*(r.pm||0)+qtN*r.px)/q2:r.px;sN=q2*r.px;}
-    return Object.assign({},r,{sa:sa,sN:sN,qtN:qtN,pmN:pmN});
+    return Object.assign({},r,{sa:sa,sN:sN,qtN:qtN,pmN:pmN},r.op==='novo'?{qt:0}:{});
   });
+  window._res=res;
+  document.getElementById('sec-basket').style.display='none';
   var totN=res.filter(function(p){return p.op!=='vender';}).reduce(function(s,p){return s+p.sN;},0);
-  document.getElementById('res-cards').innerHTML=[['Total vendido',vendas+vendasP,'cr'],['Aporte',aporte,'cg'],['Portfolio final',totN,'cn'],['Alvo / posição',alvo,'ca']].map(function(a){return '<div class="rc"><div class="rcl">'+a[0]+'</div><div class="rcv '+a[2]+'">R$ '+fmt(a[1])+'</div></div>';}).join('');
+  document.getElementById('res-cards').innerHTML=[['Patrimônio inicial',totalAtual,'cn'],['Total vendido',vendas+vendasP,'cr'],['Aporte',aporte,'cg'],['Patrimônio final',totN,'cn'],['Alvo / posição',alvo,'ca']].map(function(a){return '<div class="rc"><div class="rcl">'+a[0]+'</div><div class="rcv '+a[2]+'">R$ '+fmt(a[1])+'</div></div>';}).join('');
   document.getElementById('res-cli').textContent=nome+' · '+data;
   var OPS={vender:'VENDER',parcial:'PARCIAL',manter:'MANTER',aportar:'APORTAR',novo:'NOVO'};
   var BC={vender:'bv',parcial:'bvp',manter:'bm',aportar:'ba',novo:'bn'};
@@ -280,10 +320,10 @@ function calcular(){
   document.getElementById('res-tb').innerHTML=res.map(function(p){
     var pct=totN>0?p.sN/totN*100:0,q2=p.op==='vender'?0:(p.qt||0)+(p.qtN||0);
     var acao;
-    if(p.op==='vender')acao='<span style="color:#C0392B;font-weight:700">Vender '+p.qt+' ações</span>';
-    else if(p.op==='parcial')acao='<span style="color:#C05A00;font-weight:700">Vender '+Math.abs(p.qtN)+' ações (R$ '+fmt(p.vparcial||0)+')</span>';
+    if(p.op==='vender')acao='<span style="color:#C0392B;font-weight:700">Vender '+p.qt+' ações</span> <span style="color:#6B7280;font-weight:600">· R$ '+fmt((p.qt||0)*(p.px||0))+'</span>';
+    else if(p.op==='parcial')acao='<span style="color:#C05A00;font-weight:700">Vender '+Math.abs(p.qtN)+' ações</span> <span style="color:#6B7280;font-weight:600">· R$ '+fmt(Math.abs(p.qtN)*(p.px||0))+'</span>';
     else if(p.op==='manter')acao='<span style="color:#9CA3AF">Manter</span>';
-    else if(p.qtN>0)acao='<span style="color:#1A7A50;font-weight:700">+ '+p.qtN+' ações</span>';
+    else if(p.qtN>0)acao='<span style="color:'+(p.op==='novo'?'#6B21A8':'#1A7A50')+';font-weight:700">+ '+p.qtN+' ações</span> <span style="color:#6B7280;font-weight:600">· R$ '+fmt(p.qtN*p.px)+'</span>';
     else acao='—';
     var sStr=p.op==='vender'?'<span style="color:#C0392B">—</span>':'<span style="font-weight:700;color:'+(p.op==='novo'?'#6B21A8':p.op==='parcial'?'#C05A00':'#1A7A50')+'">R$ '+fmt(p.sN)+'</span>';
     return '<tr class="'+RC[p.op]+'"><td><strong>'+p.ticker+'</strong></td><td><span class="badge '+BC[p.op]+'">'+OPS[p.op]+'</span></td><td>'+acao+'</td><td style="font-weight:600">'+(q2||'—')+'</td><td style="color:#9CA3AF">'+(p.pm?'R$ '+p.pm.toFixed(2):'—')+'</td><td style="font-weight:700">'+(p.op!=='vender'&&p.pmN?'R$ '+p.pmN.toFixed(2):'—')+'</td><td>'+sStr+'</td><td style="color:#9CA3AF">'+(p.op!=='vender'&&pct>0?pct.toFixed(1)+'%':'—')+'</td></tr>';
@@ -300,114 +340,99 @@ function gerarPDF() {
       var doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
       var nome = document.getElementById('nome').value||'Cliente';
       var data = document.getElementById('data').value;
-      var W=297,MG=14;
-      doc.setFillColor(11,30,28);doc.rect(0,0,W,14,'F');
-      doc.setTextColor(45,217,192);doc.setFontSize(9);doc.setFont('helvetica','bold');
-      doc.text('RENOVA INVEST  ·  Mesa RV',MG,9);
-      doc.setTextColor(255,255,255);doc.setFont('helvetica','normal');
-      doc.text(data,W-MG,9,{align:'right'});
-      doc.setFillColor(29,158,117);doc.rect(0,14,W,2,'F');
-      doc.setTextColor(17,17,17);doc.setFont('helvetica','bold');doc.setFontSize(20);
-      // ── PÁGINA 1: CARTEIRA ATUAL ──────────────────────────────
-      doc.setFillColor(11,30,28);doc.rect(0,0,W,14,'F');
-      doc.setTextColor(45,217,192);doc.setFontSize(9);doc.setFont('helvetica','bold');
-      doc.text('RENOVA INVEST  ·  Mesa RV',MG,9);
-      doc.setTextColor(255,255,255);doc.setFont('helvetica','normal');
-      doc.text(data,W-MG,9,{align:'right'});
-      doc.setFillColor(29,158,117);doc.rect(0,14,W,2,'F');
-      doc.setTextColor(17,17,17);doc.setFont('helvetica','bold');doc.setFontSize(20);
-      doc.text('Carteira Atual',MG,28);
-      doc.setFont('helvetica','normal');doc.setFontSize(11);doc.setTextColor(107,114,128);
-      doc.text(nome,MG,36);
-      doc.setDrawColor(209,213,219);doc.line(MG,40,W-MG,40);
-      var totalCart=rows.reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
-      doc.setFontSize(10);doc.setTextColor(107,114,128);
-      doc.text('Patrimônio total: R$ '+totalCart.toLocaleString('pt-BR',{minimumFractionDigits:2}),MG,48);
-      var hdrs1=['Ativo','Qtd','Preço médio','Preço atual','Resultado','Saldo','Recomendação'];
-      var cw1=[22,18,28,28,22,32,30];
-      var ty1=56;
-      doc.setFillColor(249,250,251);doc.rect(MG,ty1,W-MG*2,9,'F');
-      var tx1=MG;
-      doc.setFontSize(8);doc.setTextColor(107,114,128);doc.setFont('helvetica','bold');
-      hdrs1.forEach(function(h,i){doc.text(h,tx1,ty1+6);tx1+=cw1[i];});
-      ty1+=9;doc.setDrawColor(209,213,219);doc.line(MG,ty1,W-MG,ty1);
-      var opColors1={vender:[192,57,43],parcial:[192,90,0],manter:[107,114,128],aportar:[26,122,80],novo:[107,33,168]};
-      rows.forEach(function(r,ri){
-        if(r.op==='novo') return;
-        var s=(r.qt||0)*(r.px||0);
-        var res=r.pm&&r.px?((r.px-r.pm)/r.pm*100):0;
-        if(ri%2===0){doc.setFillColor(249,249,249);doc.rect(MG,ty1,W-MG*2,9,'F');}
-        tx1=MG;
-        [{t:r.ticker,c:[17,17,17],b:true},{t:String(r.qt||0),c:[17,17,17],b:false},
-         {t:r.pm?'R$ '+r.pm.toFixed(2):'—',c:[17,17,17],b:false},
-         {t:r.px?'R$ '+r.px.toFixed(2):'—',c:[17,17,17],b:false},
-         {t:r.px&&r.pm?(res>=0?'+':'')+res.toFixed(2)+'%':'—',c:res>=0?[26,122,80]:[192,57,43],b:true},
-         {t:s?'R$ '+s.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—',c:[17,17,17],b:false},
-         {t:{vender:'VENDER',parcial:'PARCIAL',manter:'MANTER',aportar:'APORTAR',novo:'NOVO'}[r.op]||r.op,c:opColors1[r.op]||[17,17,17],b:true}
-        ].forEach(function(cell,ci){
-          doc.setTextColor(cell.c[0],cell.c[1],cell.c[2]);
-          doc.setFont('helvetica',cell.b?'bold':'normal');
-          doc.setFontSize(8);
-          doc.text(String(cell.t).substring(0,18),tx1,ty1+6);
-          tx1+=cw1[ci];
+      if(!window._res) calcular();
+      var W=297,H=210,MG=14,CW=W-MG*2;
+      var C={ink:[17,17,17],mut:[107,114,128],lin:[229,231,235],dark:[11,30,28],teal:[45,217,192],grn:[29,158,117],
+        vender:{t:'VENDER',c:[192,57,43],bg:[253,237,236],row:[255,248,248]},
+        parcial:{t:'PARCIAL',c:[192,90,0],bg:[255,240,224],row:[255,245,236]},
+        manter:{t:'MANTER',c:[107,114,128],bg:[245,245,245],row:[250,250,250]},
+        aportar:{t:'APORTAR',c:[26,122,80],bg:[232,245,238],row:[247,254,250]},
+        novo:{t:'NOVO',c:[107,33,168],bg:[243,232,255],row:[250,245,255]}};
+      function T(s,x,y,o){doc.text(String(s),x,y,Object.assign({baseline:'middle'},o||{}));}
+      function F(c){doc.setFillColor(c[0],c[1],c[2]);} function D(c){doc.setDrawColor(c[0],c[1],c[2]);} function K(c){doc.setTextColor(c[0],c[1],c[2]);}
+      function font(sz,b){doc.setFontSize(sz);doc.setFont('helvetica',b?'bold':'normal');}
+      function brl(n,d){return 'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});}
+      function header(title,sub){
+        F(C.dark);doc.rect(0,0,W,14,'F');F(C.grn);doc.rect(0,14,W,1.5,'F');
+        font(9,1);K(C.teal);T('RENOVA INVEST  ·  Mesa RV',MG,7);
+        font(9,0);K([255,255,255]);T(data,W-MG,7,{align:'right'});
+        font(20,1);K(C.ink);T(title,MG,26);
+        font(10,0);K(C.mut);T(sub,MG,34);
+        D(C.lin);doc.setLineWidth(.3);doc.line(MG,39,W-MG,39);
+      }
+      function footer(){F(C.grn);doc.rect(0,H-9,W,1.2,'F');font(7,0);K([156,163,175]);T('Renova Invest  ·  Mesa RV  ·  Material interno',MG,H-4.5);T(nome+'  ·  '+data,W-MG,H-4.5,{align:'right'});}
+      function cards(list,y){
+        var g=4,cw=(CW-g*(list.length-1))/list.length,x=MG,h=20;
+        list.forEach(function(c){
+          F(c.bg);doc.roundedRect(x,y,cw,h,1.5,1.5,'F');D(c.c);doc.setLineWidth(.3);doc.roundedRect(x,y,cw,h,1.5,1.5,'D');
+          F(c.c);doc.rect(x+.2,y+.2,1.6,h-.4,'F');
+          font(7,0);K(C.mut);T(c.l.toUpperCase(),x+5,y+6.5);
+          var v=c.v,sz=13;font(sz,1);while(doc.getTextWidth(v)>cw-8&&sz>7){sz-=.5;font(sz,1);}
+          K(c.c);T(v,x+5,y+14);x+=cw+g;
         });
-        ty1+=9;doc.setDrawColor(240,240,240);doc.line(MG,ty1,W-MG,ty1);
-      });
-      doc.setFillColor(29,158,117);doc.rect(0,201,W,4,'F');
-      doc.setTextColor(156,163,175);doc.setFontSize(7);doc.setFont('helvetica','normal');
-      doc.text('Renova Invest  ·  Mesa RV  ·  Material interno',MG,207);
+        return y+h;
+      }
+      function badge(op,cx,cy){var b=C[op]||C.manter;F(b.bg);D(b.c);doc.setLineWidth(.3);doc.roundedRect(cx-12,cy-3,24,6,3,3,'FD');font(7,1);K(b.c);T(b.t,cx,cy+.2,{align:'center'});}
+      // cols: [{h,w,al}] w = fração da largura útil; rows: [{op, cells:[{t,c,b}] }]
+      function table(cols,rows,y,rh){
+        rh=rh||10;var tot=cols.reduce(function(s,c){return s+c.w;},0),xs=[],x=MG;
+        cols.forEach(function(c){var w=c.w/tot*CW;xs.push({x:x,w:w,al:c.al||'left'});x+=w;});
+        function cx(i){var c=xs[i];return c.al==='center'?c.x+c.w/2:c.al==='right'?c.x+c.w-3:c.x+3;}
+        F([249,250,251]);doc.rect(MG,y,CW,8,'F');font(7.5,1);K(C.mut);
+        cols.forEach(function(c,i){T(c.h.toUpperCase(),cx(i),y+4,{align:xs[i].al});});
+        y+=8;D([209,213,219]);doc.setLineWidth(.3);doc.line(MG,y,W-MG,y);
+        rows.forEach(function(r){
+          if(y+rh>H-22){footer();doc.addPage();header('(continuação)',nome);y=46;}
+          if(r.fill){F(r.fill);doc.rect(MG,y,CW,rh,'F');}
+          r.cells.forEach(function(c,i){
+            if(c.badge){badge(c.badge,cx(i),y+rh/2);return;}
+            font(c.sz||8.5,c.b);K(c.c||C.ink);T(c.t,cx(i),y+rh/2,{align:xs[i].al});
+          });
+          y+=rh;D([238,238,238]);doc.line(MG,y,W-MG,y);
+        });
+        return y;
+      }
+
+      // ── PÁGINA 1: CARTEIRA ATUAL ──────────────────────────────
+      var aporteTxt=parseFloat(document.getElementById('aporte').value)||0;
+      var atuais=rows.filter(function(r){return r.op!=='novo';});
+      var totalCart=atuais.reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
+      var vendasRows=rows.filter(function(r){return r.op==='vender';});
+      var vendaTotal=vendasRows.reduce(function(s,r){return s+(r.qt||0)*(r.px||0);},0);
+      var totFinal=window._res.filter(function(p){return p.op!=='vender';}).reduce(function(s,p){return s+p.sN;},0);
+      header('Análise de Carteira',nome+'  ·  posição atual e plano de rebalanceamento'+(aporteTxt?'  ·  aporte de '+brl(aporteTxt,0):''));
+      var y=cards([
+        {l:'Patrimônio atual',v:brl(totalCart,0),c:C.ink,bg:[245,245,245]},
+        {l:'A vender',v:(vendasRows.map(function(r){return r.ticker;}).join(' + ')||'—')+(vendaTotal?'  ·  '+brl(vendaTotal,0):''),c:C.vender.c,bg:C.vender.bg},
+        {l:'Aporte',v:brl(aporteTxt,0),c:C.aportar.c,bg:C.aportar.bg},
+        {l:'Patrimônio final',v:brl(totFinal,0),c:[127,96,0],bg:[255,249,230]}],45);
+      y=table([{h:'Ativo',w:14},{h:'Qtd',w:10,al:'right'},{h:'PM',w:14,al:'right'},{h:'Mercado',w:14,al:'right'},{h:'Resultado',w:13,al:'right'},{h:'Saldo',w:16,al:'right'},{h:'% Cart.',w:10,al:'right'},{h:'Recomendação',w:19,al:'center'}],
+        atuais.map(function(r,i){var s=(r.qt||0)*(r.px||0),res=r.pm&&r.px?(r.px-r.pm)/r.pm*100:0;
+          return {fill:i%2?null:[250,250,250],cells:[{t:r.ticker,b:1,sz:9},{t:(r.qt||0).toLocaleString('pt-BR'),c:[45,55,72]},{t:r.pm?brl(r.pm,2):'—',c:[45,55,72]},{t:r.px?brl(r.px,2):'—',c:[45,55,72]},
+            {t:r.pm&&r.px?(res>=0?'+':'')+res.toFixed(2).replace('.',',')+'%':'—',b:1,c:res>=0?C.aportar.c:C.vender.c},{t:s?brl(s,0):'—',c:[45,55,72]},{t:totalCart?(s/totalCart*100).toFixed(1).replace('.',',')+'%':'—',c:C.mut},{badge:r.op}]};}),y+8);
+      F([240,247,244]);doc.rect(MG,y,CW,10,'F');font(9,1);K(C.ink);T('TOTAL',MG+3,y+5);
+      K(C.aportar.c);font(10,1);T(brl(totalCart,2),MG+CW*(91/110)-3,y+5,{align:'right'});
+      footer();
 
       // ── PÁGINA 2: REBALANCEAMENTO ──────────────────────────────
       doc.addPage();
-
-      doc.text('Rebalanceamento de Carteira',MG,28);
-      doc.setFont('helvetica','normal');doc.setFontSize(11);doc.setTextColor(107,114,128);
-      doc.text(nome,MG,36);
-      doc.setDrawColor(209,213,219);doc.line(MG,40,W-MG,40);
-      var cDefs={cr:[253,237,236,192,57,43],cg:[232,245,238,26,122,80],cn:[245,245,245,17,17,17],ca:[255,249,230,127,96,0]};
-      var cx=MG;
-      document.querySelectorAll('#res-cards .rc').forEach(function(c){
-        var lbl=c.querySelector('.rcl').textContent||'';
-        var val=c.querySelector('.rcv').textContent||'';
-        var cl=['cr','cg','cn','ca'].find(function(x){return c.querySelector('.rcv').classList.contains(x);})||'cn';
-        var cd=cDefs[cl];
-        doc.setFillColor(cd[0],cd[1],cd[2]);doc.rect(cx,43,64,21,'F');
-        doc.setDrawColor(cd[3],cd[4],cd[5]);doc.rect(cx,43,64,21,'D');
-        doc.setTextColor(107,114,128);doc.setFontSize(7);doc.setFont('helvetica','normal');
-        doc.text(lbl,cx+4,51);
-        doc.setTextColor(cd[3],cd[4],cd[5]);doc.setFontSize(12);doc.setFont('helvetica','bold');
-        doc.text(val,cx+4,60);cx+=67;
-      });
-      var ty=73;
-      doc.setFillColor(249,250,251);doc.rect(MG,ty,W-MG*2,9,'F');
-      var hdrs=['Ativo','Operação','Ação','Qtd total','PM antes','Novo PM','Saldo novo','% cart.'];
-      var cw=[22,26,48,20,22,22,28,12];
-      var tx=MG;
-      doc.setFontSize(8);doc.setTextColor(107,114,128);doc.setFont('helvetica','bold');
-      hdrs.forEach(function(h,i){doc.text(h,tx,ty+6);tx+=cw[i];});
-      ty+=9;doc.setDrawColor(209,213,219);doc.line(MG,ty,W-MG,ty);
-      var rcC={rv:[255,248,248],rvp:[255,245,236],rm:[250,250,250],ra:[247,254,250],rn:[250,245,255]};
-      var txC={rv:[192,57,43],rvp:[192,90,0],rm:[107,114,128],ra:[26,122,80],rn:[107,33,168]};
-      document.querySelectorAll('#res-tb tr').forEach(function(tr,ri){
-        var cells=tr.querySelectorAll('td');if(!cells.length)return;
-        var cls=['rv','rvp','rm','ra','rn'].find(function(x){return tr.classList.contains(x);})||'rm';
-        var bg=rcC[cls],fg=txC[cls];
-        doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(MG,ty,W-MG*2,9,'F');
-        tx=MG;
-        cells.forEach(function(td,ci){
-          var txt=(td.textContent||'').trim().replace(/\s+/g,' ').substring(0,30);
-          var color=ci>=2?fg:[17,17,17];
-          doc.setTextColor(color[0],color[1],color[2]);
-          doc.setFont('helvetica',ci===0||ci===2?'bold':'normal');
-          doc.setFontSize(8);doc.text(txt,tx,ty+6);tx+=cw[ci];
-        });
-        ty+=9;doc.setDrawColor(240,240,240);doc.line(MG,ty,W-MG,ty);
-        if(ty>195){doc.addPage();ty=20;}
-      });
-      doc.setFillColor(29,158,117);doc.rect(0,201,W,4,'F');
-      doc.setTextColor(156,163,175);doc.setFontSize(7);doc.setFont('helvetica','normal');
-      doc.text('Renova Invest  ·  Mesa RV  ·  Material interno',MG,207);
-
+      header('Rebalanceamento de Carteira',nome+'  ·  operações para execução');
+      var cMap={cr:[C.vender.c,C.vender.bg],cg:[C.aportar.c,C.aportar.bg],cn:[C.ink,[245,245,245]],ca:[[127,96,0],[255,249,230]]};
+      var cl2=[];document.querySelectorAll('#res-cards .rc').forEach(function(c){var v=c.querySelector('.rcv'),k=['cr','cg','cn','ca'].find(function(x){return v.classList.contains(x);})||'cn';
+        cl2.push({l:c.querySelector('.rcl').textContent,v:v.textContent,c:cMap[k][0],bg:cMap[k][1]});});
+      y=cards(cl2,45);
+      var totN=totFinal;
+      table([{h:'Ativo',w:11},{h:'Operação',w:13,al:'center'},{h:'Ação',w:30},{h:'Qtd total',w:10,al:'right'},{h:'PM antes',w:11,al:'right'},{h:'Novo PM',w:11,al:'right'},{h:'Saldo novo',w:13,al:'right'},{h:'% Cart.',w:9,al:'right'}],
+        window._res.map(function(p){var b=C[p.op]||C.manter,q2=p.op==='vender'?0:(p.qt||0)+(p.qtN||0),ac;
+          if(p.op==='vender')ac='Vender '+(p.qt||0)+' ações  ·  '+brl((p.qt||0)*(p.px||0),2);
+          else if(p.op==='parcial')ac='Vender '+Math.abs(p.qtN)+' ações  ·  '+brl(Math.abs(p.qtN)*(p.px||0),2);
+          else if(p.op==='manter')ac='Manter';
+          else if(p.qtN>0)ac='Comprar '+p.qtN+' ações  ·  '+brl(p.qtN*p.px,2);
+          else ac='—';
+          var sold=p.op==='vender';
+          return {fill:b.row,cells:[{t:p.ticker,b:1,sz:9},{badge:p.op},{t:ac,b:1,c:p.op==='manter'?C.mut:b.c},{t:q2?q2.toLocaleString('pt-BR'):'—'},{t:p.pm?brl(p.pm,2):'—',c:C.mut},
+            {t:!sold&&p.pmN?brl(p.pmN,2):'—',b:1},{t:sold?'—':brl(p.sN,2),b:1,c:sold?C.mut:b.c},{t:!sold&&totN?(p.sN/totN*100).toFixed(1).replace('.',',')+'%':'—',c:C.mut}]};}),y+8);
+      footer();
       // Store for download
       window._pdfDoc = doc;
       window._pdfNome = nome;
@@ -457,7 +482,8 @@ function fecharPDF() {
 }
 function baixarPDF() {
   if (window._pdfDoc) {
-    window._pdfDoc.save('Rebalanceamento_'+(window._pdfNome||'Cliente').replace(/\s+/g,'_')+'.pdf');
+    try { window._pdfDoc.save('Rebalanceamento_'+(window._pdfNome||'Cliente').replace(/\s+/g,'_')+'.pdf'); }
+    catch(e) { alert('Download bloqueado pelo ambiente. O PDF está visível na tela — use Ctrl+Print Screen para capturar.'); }
   }
 }
 function calcQtNovoRow(id) {
@@ -507,6 +533,76 @@ async function buscarPreco(id) {
     if (pxEl) { pxEl.textContent='erro'; pxEl.style.color='#C0392B'; }
   }
 }
+
+// ── BASKET DE PUSH ──────────────────────────────────────────
+var BK_COLS=['NUMERO_CONTA','VALIDADE_PUSH','VALIDADE_ORDEM','ATIVO','ESTRATEGIA','DIRECAO','QUANTIDADE','QUANTIDADE_APARENTE','QUANTIDADE_MINIMA','TIPO_PRECO','PRECO_LIMITE','TIPO_DISPARO','PRECO_DISPARO_CIMA','PRECO_LIMITE_CIMA','PRECO_DISPARO_BAIXO','PRECO_LIMITE_BAIXO'];
+var _bkLines=[];
+
+function splitLote(ticker,q){
+  // lote padrão de 100 no ticker normal, sobra no fracionário (sufixo F)
+  var out=[],lote=Math.floor(q/100)*100,frac=q-lote;
+  if(lote>0)out.push({ativo:ticker,qt:lote});
+  if(frac>0)out.push({ativo:ticker+'F',qt:frac});
+  return out;
+}
+
+function gerarBasket(){
+  var conta=(document.getElementById('conta').value||'').replace(/\D/g,'');
+  if(!conta){bkMsg('Informe a Conta BTG do cliente no card "Cliente".',false);document.getElementById('sec-basket').style.display='block';document.getElementById('conta').focus();return;}
+  if(!window._res){bkMsg('Calcule o rebalanceamento antes de gerar a basket.',false);document.getElementById('sec-basket').style.display='block';return;}
+  var vendas=[],compras=[];
+  window._res.forEach(function(p){
+    var tk=(p.ticker||'').toUpperCase().trim();if(!tk)return;
+    var q=0,dir=null;
+    if(p.op==='vender'){q=p.qt||0;dir='venda';}
+    else if(p.op==='parcial'){q=Math.abs(p.qtN||0);dir='venda';}
+    else if((p.op==='aportar'||p.op==='novo')&&p.qtN>0){q=p.qtN;dir='compra';}
+    if(!dir||q<=0)return;
+    splitLote(tk,q).forEach(function(l){
+      (dir==='venda'?vendas:compras).push({conta:conta,ativo:l.ativo,dir:dir,qt:l.qt,px:p.px||0});
+    });
+  });
+  _bkLines=vendas.concat(compras); // vendas primeiro para gerar caixa
+  if(!_bkLines.length){bkMsg('Nenhuma ordem a enviar (tudo MANTER ou sem quantidade).',false);document.getElementById('sec-basket').style.display='block';return;}
+
+  var totV=0,totC=0;
+  document.getElementById('bk-tb').innerHTML=_bkLines.map(function(l){
+    var fin=l.qt*l.px;if(l.dir==='venda')totV+=fin;else totC+=fin;
+    return '<tr class="'+(l.dir==='venda'?'bkv':'bkc')+'"><td>'+l.conta+'</td><td><strong>'+l.ativo+'</strong></td><td><span class="dir '+(l.dir==='venda'?'dir-v':'dir-c')+'">'+l.dir.toUpperCase()+'</span></td><td style="font-weight:700">'+l.qt+'</td><td>mercado</td><td style="color:#6B7280">'+(l.px?'R$ '+fmt(l.px):'—')+'</td><td style="font-weight:600">'+(l.px?'R$ '+fmt(l.qt*l.px):'—')+'</td></tr>';
+  }).join('');
+  var saldo=totV-totC;
+  document.getElementById('bk-tot').innerHTML=
+    '<span>Vendas: <b style="color:#C0392B">R$ '+fmt(totV)+'</b></span>'+
+    '<span>Compras: <b style="color:#1A7A50">R$ '+fmt(totC)+'</b></span>'+
+    '<span>Líquido: <b style="color:'+(saldo>=0?'#1A7A50':'#C0392B')+'">'+(saldo>=0?'+':'−')+' R$ '+fmt(Math.abs(saldo))+'</b> <span style="color:#9CA3AF">(negativo = usa aporte/caixa)</span></span>';
+  document.getElementById('bk-info').textContent='· '+_bkLines.length+' ordens · conta '+conta;
+  document.getElementById('bk-raw').value=basketText(true);
+  document.getElementById('bk-msg').style.display='none';
+  document.getElementById('sec-basket').style.display='block';
+  setTimeout(function(){document.getElementById('sec-basket').scrollIntoView({behavior:'smooth',block:'start'});},100);
+}
+
+function basketText(header){
+  var lines=_bkLines.map(function(l){
+    var row={NUMERO_CONTA:l.conta,VALIDADE_PUSH:'hoje',VALIDADE_ORDEM:'hoje',ATIVO:l.ativo,ESTRATEGIA:'position',DIRECAO:l.dir,QUANTIDADE:l.qt,TIPO_PRECO:'mercado'};
+    return BK_COLS.map(function(c){return row[c]!==undefined?row[c]:'';}).join('\t');
+  });
+  if(header)lines.unshift(BK_COLS.join('\t'));
+  return lines.join('\n');
+}
+
+function copiarBasket(header){
+  if(!_bkLines.length)return;
+  var txt=basketText(header);
+  var ok=function(){bkMsg('✓ '+_bkLines.length+' ordens copiadas'+(header?' (com cabeçalho)':'')+' — é só colar (Ctrl+V).',true);};
+  var fallback=function(){
+    var ta=document.getElementById('bk-raw');ta.value=txt;ta.parentNode.open=true;ta.focus();ta.select();
+    try{document.execCommand('copy')?ok():bkMsg('Selecionei o texto abaixo — pressione Ctrl+C.',false);}catch(e){bkMsg('Selecionei o texto abaixo — pressione Ctrl+C.',false);}
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,fallback);}else fallback();
+}
+
+function bkMsg(txt,ok){var el=document.getElementById('bk-msg');el.textContent=txt;el.className=ok?'ok':'er';el.style.display='block';}
 
 function fmt(n){return(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 </script>
